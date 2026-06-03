@@ -1,0 +1,25 @@
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+websockets==12.0
+python-dotenv==1.0.1
+
+# Data
+pandas==2.2.2
+numpy==1.26.4
+requests==2.32.3
+
+# ML
+tensorflow==2.16.1
+scikit-learn==1.5.0
+torch==2.3.0
+shap==0.45.1
+
+# NLP / Sentiment
+transformers==4.41.2
+nltk==3.8.1
+vaderSentiment==3.3.2
+newspaper3k==0.2.8
+
+# Crypto data
+python-binance==1.0.19
+ccxt==4.3.34
