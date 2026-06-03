@@ -1,0 +1,60 @@
+workflows:
+
+  ios-development:
+    name: iOS Build & Install
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      flutter: 3.22.3
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: development
+        bundle_identifier: com.cryptonexus.app
+      vars:
+        BUNDLE_ID: "com.cryptonexus.app"
+        APP_STORE_APPLE_ID: "1234567890"
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+
+    scripts:
+      - name: Set up Flutter
+        script: |
+          flutter --version
+          flutter pub get
+
+      - name: Pod install
+        script: |
+          cd ios && pod install --repo-update
+
+      - name: Build iOS
+        script: |
+          flutter build ios --release \
+            --dart-define=FLUTTER_WEB_USE_SKIA=false
+
+      - name: Package IPA
+        script: |
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r Runner.ipa Payload/
+
+    artifacts:
+      - build/ios/iphoneos/Runner.ipa
+      - build/ios/iphoneos/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+
+    publishing:
+      email:
+        recipients:
+          - hammad.ahmed0566@gmail.com
+        notify:
+          success: true
+          failure: true
