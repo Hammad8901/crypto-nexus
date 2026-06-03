@@ -1,7 +1,7 @@
 workflows:
 
-  ios-development:
-    name: iOS Build & Install
+  ios-free-build:
+    name: iOS Free Build
     max_build_duration: 60
     instance_type: mac_mini_m2
 
@@ -9,47 +9,42 @@ workflows:
       flutter: 3.22.3
       xcode: latest
       cocoapods: default
-      ios_signing:
-        distribution_type: development
-        bundle_identifier: com.cryptonexus.app
       vars:
         BUNDLE_ID: "com.cryptonexus.app"
-        APP_STORE_APPLE_ID: "1234567890"
-
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: main
-          include: true
 
     scripts:
-      - name: Set up Flutter
-        script: |
-          flutter --version
-          flutter pub get
+      - name: Flutter pub get
+        script: flutter pub get
 
       - name: Pod install
-        script: |
-          cd ios && pod install --repo-update
+        script: find . -name "Podfile" -execdir pod install \;
 
-      - name: Build iOS
+      - name: Build unsigned iOS
         script: |
-          flutter build ios --release \
-            --dart-define=FLUTTER_WEB_USE_SKIA=false
+          flutter build ios --release --no-codesign
 
-      - name: Package IPA
+      - name: Export IPA
         script: |
-          cd build/ios/iphoneos
-          mkdir -p Payload
-          cp -r Runner.app Payload/
-          zip -r Runner.ipa Payload/
+          cd ios
+          xcodebuild -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -archivePath "$CM_BUILD_DIR/Runner.xcarchive" \
+            archive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+          mkdir -p "$CM_BUILD_DIR/ipa"
+          cp -r "$CM_BUILD_DIR/Runner.xcarchive/Products/Applications/Runner.app" \
+            "$CM_BUILD_DIR/ipa/"
+          cd "$CM_BUILD_DIR/ipa"
+          mkdir Payload
+          mv Runner.app Payload/
+          zip -r CryptoNexus.ipa Payload
 
     artifacts:
-      - build/ios/iphoneos/Runner.ipa
-      - build/ios/iphoneos/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-      - flutter_drive.log
+      - $CM_BUILD_DIR/ipa/CryptoNexus.ipa
+      - $CM_BUILD_DIR/Runner.xcarchive/Products/Applications/Runner.app
 
     publishing:
       email:
