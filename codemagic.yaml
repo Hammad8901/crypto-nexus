@@ -9,42 +9,34 @@ workflows:
       flutter: 3.22.3
       xcode: latest
       cocoapods: default
-      vars:
-        BUNDLE_ID: "com.cryptonexus.app"
 
     scripts:
+      - name: Disable Swift Package Manager
+        script: flutter config --no-enable-swift-package-manager
+
       - name: Flutter pub get
         script: flutter pub get
 
       - name: Pod install
-        script: find . -name "Podfile" -execdir pod install \;
+        script: |
+          cd ios
+          pod install --repo-update
 
-      - name: Build unsigned iOS
+      - name: Build iOS (unsigned)
         script: |
           flutter build ios --release --no-codesign
 
-      - name: Export IPA
+      - name: Package IPA
         script: |
-          cd ios
-          xcodebuild -workspace Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
-            -archivePath "$CM_BUILD_DIR/Runner.xcarchive" \
-            archive \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
-          mkdir -p "$CM_BUILD_DIR/ipa"
-          cp -r "$CM_BUILD_DIR/Runner.xcarchive/Products/Applications/Runner.app" \
-            "$CM_BUILD_DIR/ipa/"
-          cd "$CM_BUILD_DIR/ipa"
-          mkdir Payload
-          mv Runner.app Payload/
-          zip -r CryptoNexus.ipa Payload
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r CryptoNexus.ipa Payload/
+          echo "IPA created successfully"
 
     artifacts:
-      - $CM_BUILD_DIR/ipa/CryptoNexus.ipa
-      - $CM_BUILD_DIR/Runner.xcarchive/Products/Applications/Runner.app
+      - build/ios/iphoneos/CryptoNexus.ipa
+      - build/ios/iphoneos/Runner.app
 
     publishing:
       email:
