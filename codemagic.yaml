@@ -6,14 +6,11 @@ workflows:
     instance_type: mac_mini_m2
 
     environment:
-      flutter: 3.22.3
+      flutter: stable
       xcode: latest
       cocoapods: default
 
     scripts:
-      - name: Disable Swift Package Manager
-        script: flutter config --no-enable-swift-package-manager
-
       - name: Flutter pub get
         script: flutter pub get
 
@@ -32,7 +29,7 @@ workflows:
           mkdir -p Payload
           cp -r Runner.app Payload/
           zip -r CryptoNexus.ipa Payload/
-          echo "IPA created successfully"
+          echo "IPA packaged successfully"
 
     artifacts:
       - build/ios/iphoneos/CryptoNexus.ipa
