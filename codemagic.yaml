@@ -6,50 +6,36 @@ workflows:
     instance_type: mac_mini_m2
 
     environment:
-      flutter: stable
-      xcode: latest
+      flutter: 3.22.3
+      xcode: 15.4
       cocoapods: default
 
     scripts:
       - name: Flutter pub get
         script: flutter pub get
 
-      - name: Generate iOS config
-        script: flutter build ios --config-only --release --no-codesign
-
       - name: Pod install
         script: |
+          flutter precache --ios
           cd ios
           pod install --repo-update
 
-      - name: Build unsigned .app via xcodebuild
+      - name: Build unsigned iOS app
         script: |
-          cd ios
-          xcodebuild \
-            -workspace Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
-            -sdk iphoneos \
-            -derivedDataPath ../build/ios_output \
-            build \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGN_ENTITLEMENTS="" \
-            EXPANDED_CODE_SIGN_IDENTITY=""
+          flutter build ios --release --no-codesign
 
       - name: Package unsigned IPA
         script: |
-          cd build/ios_output/Build/Products/Release-iphoneos
+          cd build/ios/iphoneos
           mkdir -p Payload
           cp -r Runner.app Payload/
           zip -r CryptoNexus-unsigned.ipa Payload/
           cp CryptoNexus-unsigned.ipa $CM_BUILD_DIR/
-          echo "Unsigned IPA ready — sign with Sideloadly"
+          echo "Unsigned IPA ready — download and sign with Sideloadly"
 
     artifacts:
       - CryptoNexus-unsigned.ipa
-      - build/ios_output/Build/Products/Release-iphoneos/Runner.app
+      - build/ios/iphoneos/Runner.app
 
     publishing:
       email:
